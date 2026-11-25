@@ -1,0 +1,49 @@
+
+name: Build CHOPNOW Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get CHOPNOW source code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate Android project files
+        run: |
+          flutter create --project-name chopnow --platforms=android /tmp/chopnow_scaffold
+          cp -R /tmp/chopnow_scaffold/android ./android
+          cp /tmp/chopnow_scaffold/pubspec.yaml ./pubspec.yaml
+          cp /tmp/chopnow_scaffold/analysis_options.yaml ./analysis_options.yaml
+          cp /tmp/chopnow_scaffold/.metadata ./.metadata
+          cp /tmp/chopnow_scaffold/.gitignore ./.gitignore
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CHOPNOW-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
